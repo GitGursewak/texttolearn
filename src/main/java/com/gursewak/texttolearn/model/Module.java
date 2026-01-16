@@ -1,5 +1,6 @@
 package com.gursewak.texttolearn.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -21,6 +22,7 @@ public class Module {
     // Many Modules belong to One Course
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "course_id", nullable = false)
+    @JsonIgnore  // Prevents infinite loop
     private Course course;
 
     @Column(nullable = false, length = 200)
