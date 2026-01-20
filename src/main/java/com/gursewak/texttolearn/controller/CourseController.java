@@ -57,4 +57,31 @@ public class CourseController {
     public List<Course> getCoursesByDifficulty(@PathVariable String difficulty) {
         return courseService.getCoursesByDifficulty(difficulty);
     }
+
+    // Generate course using AI
+    // POST /api/courses/generate?topic=Java Basics&difficulty=beginner
+//    @PostMapping("/generate")
+//    public ResponseEntity<Course> generateCourse(
+//            @RequestParam String topic,
+//            @RequestParam(defaultValue = "beginner") String difficulty) {
+//        try {
+//            Course course = courseService.generateCourse(topic, difficulty);
+//            return ResponseEntity.ok(course);
+//        } catch (Exception e) {
+//            return ResponseEntity.badRequest().build();
+//        }
+//    }
+    @PostMapping("/generate")
+    public ResponseEntity<Course> generateCourse(
+            @RequestParam String topic,
+            @RequestParam(defaultValue = "beginner") String difficulty) {
+        try {
+            Course course = courseService.generateCourse(topic, difficulty);
+            return ResponseEntity.ok(course);
+        } catch (org.springframework.web.reactive.function.client.WebClientResponseException e) {
+            // ADD THIS LINE TO SEE THE ERROR IN CONSOLE
+            System.err.println("Groq Error Response: " + e.getResponseBodyAsString());
+            return ResponseEntity.badRequest().build();
+        }
+    }
 }

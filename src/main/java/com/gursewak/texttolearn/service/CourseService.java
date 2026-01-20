@@ -13,6 +13,15 @@ public class CourseService {
     @Autowired
     private CourseRepository courseRepository;
 
+    @Autowired
+    private AIService aiService;
+
+    // Generate course using AI
+    public Course generateCourse(String topic, String difficulty) {
+        Course course = aiService.generateCourse(topic, difficulty);
+        return courseRepository.save(course);
+    }
+
     // Get all courses
     public List<Course> getAllCourses() {
         return courseRepository.findAll();
