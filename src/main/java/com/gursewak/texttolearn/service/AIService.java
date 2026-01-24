@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gursewak.texttolearn.model.Course;
 import com.gursewak.texttolearn.model.Module;
 import com.gursewak.texttolearn.model.Lesson;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -28,9 +29,21 @@ public class AIService {
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
 
+    @Autowired
+    private YouTubeService youtubeService;
+
+//    public AIService() {
+//        this.webClient = WebClient.builder().build();
+//        this.objectMapper = new ObjectMapper();
+//    }
+
     public AIService() {
         this.webClient = WebClient.builder().build();
         this.objectMapper = new ObjectMapper();
+        this.objectMapper.configure(
+                com.fasterxml.jackson.core.json.JsonReadFeature.ALLOW_UNESCAPED_CONTROL_CHARS.mappedFeature(),
+                true
+        );
     }
 
     public Course generateCourse(String topic, String difficulty) {
@@ -81,63 +94,44 @@ public class AIService {
             """, topic, difficulty);
     }
 
-//    private String callOpenAI(String prompt) throws Exception {
-//        Map<String, Object> requestBody = new HashMap<>();
-//        requestBody.put("model", model);
-//        requestBody.put("messages", new Object[]{
-//                Map.of("role", "user", "content", prompt)
-//        });
-//        requestBody.put("temperature", 0.7);
-//        requestBody.put("max_tokens", 3000);
-//
-//        String response = webClient.post()
-//                .uri(apiUrl)
-//                .header("Authorization", "Bearer " + apiKey)
-//                .header("Content-Type", "application/json")
-//                .bodyValue(requestBody)
-//                .retrieve()
-//                .bodyToMono(String.class)
-//                .block();
-//
-//        // Extract content from OpenAI response
-//        JsonNode root = objectMapper.readTree(response);
-//        return root.path("choices").get(0).path("message").path("content").asText();
-//    }
-private String callOpenAI(String prompt) throws Exception {
-    Map<String, Object> requestBody = new HashMap<>();
+    private String callOpenAI(String prompt) throws Exception {
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("model", model);
+        requestBody.put("messages", new Object[]{
+                Map.of("role", "user", "content", prompt)
+        });
+        requestBody.put("temperature", 0.5);
+        requestBody.put("max_tokens", 3000);
 
-    // 1. Ensure this is a valid Groq model name from your properties
-    requestBody.put("model", model);
+        String response = webClient.post()
+                .uri(apiUrl)
+                .header("Authorization", "Bearer " + apiKey)
+                .header("Content-Type", "application/json")
+                .bodyValue(requestBody)
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
 
-    requestBody.put("messages", new Object[]{
-            Map.of("role", "user", "content", prompt)
-    });
+        // Extract content from OpenAI response
+        JsonNode root = objectMapper.readTree(response);
+        return root.path("choices").get(0).path("message").path("content").asText();
+    }
 
-    requestBody.put("temperature", 0.7);
-
-    // 2. IMPORTANT: Groq prefers max_completion_tokens
-    requestBody.put("max_completion_tokens", 3000);
-
-    // 3. Force JSON mode to prevent 400 errors when asking for JSON
-    requestBody.put("response_format", Map.of("type", "json_object"));
-
-    String response = webClient.post()
-            .uri(apiUrl)
-            .header("Authorization", "Bearer " + apiKey)
-            .header("Content-Type", "application/json")
-            .bodyValue(requestBody)
-            .retrieve()
-            .bodyToMono(String.class)
-            .block();
-
-    JsonNode root = objectMapper.readTree(response);
-    return root.path("choices").get(0).path("message").path("content").asText();
-}
     private Course parseCourseFromAI(String aiResponse, String topic, String difficulty) throws Exception {
-        // Remove mark down code blocks if present
-        aiResponse = aiResponse.replaceAll("```json\\n?", "").replaceAll("```\\n?", "").trim();
+        // Remove markdown code blocks if present
+//        aiResponse = aiResponse.replaceAll("```json\\n?", "").replaceAll("```\\n?", "").trim();
+//
+//        JsonNode courseData = objectMapper.readTree(aiResponse);
 
-        JsonNode courseData = objectMapper.readTree(aiResponse);
+        String cleanedResponse = aiResponse.trim();
+        if (cleanedResponse.startsWith("```")) {
+            cleanedResponse = cleanedResponse.replaceAll("^```json", "").replaceAll("^```", "").replaceAll("```$", "");
+        }
+        cleanedResponse = cleanedResponse.trim();
+
+        // 2. Parse using the configured objectMapper
+        JsonNode courseData = objectMapper.readTree(cleanedResponse);
+
 
         // Create Course
         Course course = new Course();
@@ -168,6 +162,11 @@ private String callOpenAI(String prompt) throws Exception {
                 lesson.setContent(lessonNode.path("content").asText());
                 lesson.setOrderIndex(j + 1);
                 lesson.setModule(module);
+
+                // Fetch YouTube video for this lesson
+                String videoQuery = topic + " " + lesson.getTitle();
+                String videoUrl = youtubeService.searchVideo(videoQuery);
+                lesson.setVideoUrl(videoUrl);
 
                 module.getLessons().add(lesson);
             }
