@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title th:text="${course.title}">Course Title</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+    .container { max-width: 1200px; margin: 0 auto; }
+    .back-link {
+      display: inline-block;
+      margin-bottom: 20px;
+      color: #667eea;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    .header {
+      background: white;
+      padding: 40px;
+      border-radius: 15px;
+      margin-bottom: 30px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+      margin-bottom: 15px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 8px 20px;
+      background: #667eea;
+      color: white;
+      border-radius: 20px;
+      font-size: 0.9em;
+      margin-right: 10px;
+    }
+    .badge.beginner { background: #10b981; }
+    .badge.intermediate { background: #f59e0b; }
+    .badge.advanced { background: #ef4444; }
+    .modules {
+      display: grid;
+      gap: 25px;
+    }
+    .module {
+      background: white;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
+    .module-title {
+      color: #667eea;
+      font-size: 1.5em;
+      margin-bottom: 15px;
+    }
+    .lessons {
+      margin-top: 20px;
+      display: grid;
+      gap: 15px;
+    }
+    .lesson {
+      padding: 15px 20px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border-left: 4px solid #667eea;
+      transition: all 0.3s;
+    }
+    .lesson:hover {
+      background: #e9ecef;
+      transform: translateX(5px);
+    }
+    .lesson a {
+      color: #333;
+      text-decoration: none;
+      display: block;
+      font-weight: 500;
+    }
+    .lesson-number {
+      color: #667eea;
+      font-weight: bold;
+      margin-right: 10px;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <a href="/" class="back-link">← Back to All Courses</a>
+
+  <div class="header">
+    <h1 th:text="${course.title}">Course Title</h1>
+    <p th:text="${course.description}">Course description</p>
+    <div style="margin-top: 15px;">
+                <span class="badge"
+                      th:classappend="${course.difficulty}"
+                      th:text="${course.difficulty}">
+                    Difficulty
+                </span>
+      <span th:text="${course.modules.size()} + ' Modules'">5 Modules</span>
+    </div>
+  </div>
+
+  <div class="modules">
+    <div class="module" th:each="module, iterStat : ${course.modules}">
+      <h2 class="module-title">
+        Module <span th:text="${iterStat.count}">1</span>:
+        <span th:text="${module.title}">Module Title</span>
+      </h2>
+      <p th:text="${module.description}">Module description</p>
+
+      <div class="lessons">
+        <div class="lesson" th:each="lesson, lessonStat : ${module.lessons}">
+          <a th:href="@{/lesson/{id}(id=${lesson.id})}">
+                            <span class="lesson-number"
+                                  th:text="${iterStat.count} + '.' + ${lessonStat.count}">
+                                1.1
+                            </span>
+            <span th:text="${lesson.title}">Lesson Title</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text-to-Learn - AI Course Generator</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #666;
+            font-size: 1.2em;
+        }
+        .btn {
+            display: inline-block;
+            padding: 15px 30px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            margin-top: 20px;
+            transition: all 0.3s;
+        }
+        .btn:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .courses-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+        .course-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+            transition: all 0.3s;
+        }
+        .course-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+        }
+        .course-title {
+            color: #333;
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+        .course-desc {
+            color: #666;
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+        .badge {
+            display: inline-block;
+            padding: 5px 15px;
+            background: #667eea;
+            color: white;
+            border-radius: 20px;
+            font-size: 0.85em;
+            margin-right: 10px;
+        }
+        .badge.beginner { background: #10b981; }
+        .badge.intermediate { background: #f59e0b; }
+        .badge.advanced { background: #ef4444; }
+        .stats {
+            color: #999;
+            font-size: 0.9em;
+            margin-top: 15px;
+        }
+        .empty-state {
+            text-align: center;
+            background: white;
+            padding: 60px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        }
+        .empty-state h2 {
+            color: #666;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>📚 Text-to-Learn</h1>
+        <p class="subtitle">AI-Powered Course Generator</p>
+        <a href="/generate" class="btn">🎯 Generate New Course</a>
+    </header>
+
+    <div th:if="${courses.empty}" class="empty-state">
+        <h2>No courses yet!</h2>
+        <p>Click "Generate New Course" to create your first AI-powered course.</p>
+    </div>
+
+    <div class="courses-grid" th:if="${!courses.empty}">
+        <div class="course-card" th:each="course : ${courses}">
+            <h2 class="course-title" th:text="${course.title}">Course Title</h2>
+            <p class="course-desc" th:text="${course.description}">Course description</p>
+
+            <span class="badge"
+                  th:classappend="${course.difficulty}"
+                  th:text="${course.difficulty}">
+                    Difficulty
+                </span>
+
+            <div class="stats">
+                <span th:text="${course.modules.size()} + ' modules'">5 modules</span> •
+                <span th:text="${#temporals.format(course.createdAt, 'MMM dd, yyyy')}">Date</span>
+            </div>
+
+            <a th:href="@{/course/{id}(id=${course.id})}" class="btn">View Course →</a>
+        </div>
+    </div>
+</div>
+</body>
+</html>
