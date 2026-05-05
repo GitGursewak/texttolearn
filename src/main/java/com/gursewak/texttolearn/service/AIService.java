@@ -44,6 +44,10 @@ public class AIService {
                 com.fasterxml.jackson.core.json.JsonReadFeature.ALLOW_UNESCAPED_CONTROL_CHARS.mappedFeature(),
                 true
         );
+        this.objectMapper.configure(
+                com.fasterxml.jackson.core.json.JsonReadFeature.ALLOW_BACKSLASH_ESCAPING_ANY_CHARACTER.mappedFeature(),
+                true
+        );
     }
 
     public Course generateCourse(String topic, String difficulty) {
@@ -102,6 +106,7 @@ public class AIService {
         });
         requestBody.put("temperature", 0.5);
         requestBody.put("max_tokens", 3000);
+        requestBody.put("response_format", Map.of("type", "json_object"));
 
         String response = webClient.post()
                 .uri(apiUrl)
