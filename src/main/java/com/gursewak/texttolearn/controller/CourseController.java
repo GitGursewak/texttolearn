@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import org.springframework.security.core.Authentication;
 
 @RestController
 @RequestMapping("/api/courses")
@@ -17,8 +18,9 @@ public class CourseController {
     private CourseService courseService;
 
     @GetMapping
-    public List<Course> getAllCourses() {
-        return courseService.getAllCourses();
+    public List<Course> getAllCourses(Authentication authentication) {
+        String userId = authentication.getName();
+        return courseService.getAllCourses(userId);
     }
 
     @GetMapping("/{id}")
@@ -74,14 +76,18 @@ public class CourseController {
     @PostMapping("/generate")
     public ResponseEntity<Course> generateCourse(
             @RequestParam String topic,
-            @RequestParam(defaultValue = "beginner") String difficulty) {
+            @RequestParam(defaultValue = "beginner") String difficulty,
+            Authentication authentication) {
         try {
-            Course course = courseService.generateCourse(topic, difficulty);
+            String userId = authentication.getName();
+            Course course = courseService.generateCourse(topic, difficulty, userId);
             return ResponseEntity.ok(course);
         } catch (org.springframework.web.reactive.function.client.WebClientResponseException e) {
-            // ADD THIS LINE TO SEE THE ERROR IN CONSOLE
             System.err.println("Groq Error Response: " + e.getResponseBodyAsString());
             return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build();
         }
     }
 }

@@ -17,14 +17,15 @@ public class CourseService {
     private AIService aiService;
 
     // Generate course using AI
-    public Course generateCourse(String topic, String difficulty) {
+    public Course generateCourse(String topic, String difficulty, String userId) {
         Course course = aiService.generateCourse(topic, difficulty);
+        course.setUserId(userId);
         return courseRepository.save(course);
     }
 
-    // Get all courses
-    public List<Course> getAllCourses() {
-        return courseRepository.findAll();
+    // Get all courses for user
+    public List<Course> getAllCourses(String userId) {
+        return courseRepository.findByUserId(userId);
     }
 
     // Get course by ID

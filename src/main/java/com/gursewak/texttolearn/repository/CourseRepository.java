@@ -18,4 +18,7 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
 
     // Find courses with title containing keyword
     List<Course> findByTitleContaining(String keyword);
+
+    // Find courses belonging to a specific user
+    List<Course> findByUserId(String userId);
 }

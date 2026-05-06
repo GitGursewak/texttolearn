@@ -31,6 +31,9 @@ public class Course {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    @Column(name = "user_id")
+    private String userId;
+
     // One Course has Many Modules
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Module> modules = new ArrayList<>();
