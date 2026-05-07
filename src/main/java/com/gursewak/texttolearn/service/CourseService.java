@@ -57,11 +57,15 @@ public class CourseService {
         courseRepository.save(existingCourse);
     }
 
-    // Mark a course as failed
+    // Mark a course as failed (only if not already completed)
     public void markCourseFailed(Long courseId) {
         courseRepository.findById(courseId).ifPresent(course -> {
-            course.setStatus("FAILED");
-            courseRepository.save(course);
+            if (!"COMPLETED".equals(course.getStatus())) {
+                course.setStatus("FAILED");
+                courseRepository.save(course);
+            } else {
+                System.out.println("Skipping DLQ — courseId: " + courseId + " already COMPLETED.");
+            }
         });
     }
 
