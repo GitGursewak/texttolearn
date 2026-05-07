@@ -18,10 +18,12 @@ export default function GeneratePage() {
       const response = await axios.post(`${API_URL}/courses/generate`, null, {
         params: { topic, difficulty }
       });
+      // Backend returns 202 Accepted with the skeleton course instantly
+      // Navigate to course view which will show a loading animation and subscribe to SSE
       navigate(`/course/${response.data.id}`);
     } catch (error) {
       console.error('Error generating course:', error);
-      alert('Failed to generate course. Check the backend console for details.');
+      alert('Failed to start course generation. Please try again.');
       setLoading(false);
     }
   };

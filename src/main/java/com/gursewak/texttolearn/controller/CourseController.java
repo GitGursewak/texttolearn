@@ -2,9 +2,14 @@ package com.gursewak.texttolearn.controller;
 
 import com.gursewak.texttolearn.model.Course;
 import com.gursewak.texttolearn.service.CourseService;
+import com.gursewak.texttolearn.service.CourseGenerationPublisher;
+import com.gursewak.texttolearn.service.SseService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.List;
 import org.springframework.security.core.Authentication;
@@ -16,6 +21,12 @@ public class CourseController {
 
     @Autowired
     private CourseService courseService;
+
+    @Autowired
+    private CourseGenerationPublisher publisher;
+
+    @Autowired
+    private SseService sseService;
 
     @GetMapping
     public List<Course> getAllCourses(Authentication authentication) {
@@ -60,19 +71,7 @@ public class CourseController {
         return courseService.getCoursesByDifficulty(difficulty);
     }
 
-    // Generate course using AI
-    // POST /api/courses/generate?topic=Java Basics&difficulty=beginner
-//    @PostMapping("/generate")
-//    public ResponseEntity<Course> generateCourse(
-//            @RequestParam String topic,
-//            @RequestParam(defaultValue = "beginner") String difficulty) {
-//        try {
-//            Course course = courseService.generateCourse(topic, difficulty);
-//            return ResponseEntity.ok(course);
-//        } catch (Exception e) {
-//            return ResponseEntity.badRequest().build();
-//        }
-//    }
+    // Async course generation: save skeleton -> publish to Pub/Sub -> return 202
     @PostMapping("/generate")
     public ResponseEntity<Course> generateCourse(
             @RequestParam String topic,
@@ -80,14 +79,24 @@ public class CourseController {
             Authentication authentication) {
         try {
             String userId = authentication.getName();
-            Course course = courseService.generateCourse(topic, difficulty, userId);
-            return ResponseEntity.ok(course);
-        } catch (org.springframework.web.reactive.function.client.WebClientResponseException e) {
-            System.err.println("Groq Error Response: " + e.getResponseBodyAsString());
-            return ResponseEntity.badRequest().build();
+
+            // 1. Save an empty "PENDING" course instantly
+            Course pendingCourse = courseService.createPendingCourse(topic, difficulty, userId);
+
+            // 2. Publish the generation task to Pub/Sub
+            publisher.publishCourseGeneration(pendingCourse.getId(), topic, difficulty, userId);
+
+            // 3. Return 202 Accepted with the skeleton course (has the ID the frontend needs)
+            return ResponseEntity.status(HttpStatus.ACCEPTED).body(pendingCourse);
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.internalServerError().build();
         }
+    }
+
+    // SSE endpoint: frontend subscribes to get real-time notification when generation completes
+    @GetMapping(value = "/{courseId}/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter streamCourseStatus(@PathVariable Long courseId) {
+        return sseService.subscribeToCourse(courseId);
     }
 }

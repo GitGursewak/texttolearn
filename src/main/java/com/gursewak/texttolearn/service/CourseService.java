@@ -16,11 +16,53 @@ public class CourseService {
     @Autowired
     private AIService aiService;
 
-    // Generate course using AI
-    public Course generateCourse(String topic, String difficulty, String userId) {
-        Course course = aiService.generateCourse(topic, difficulty);
+    // Create a pending course skeleton instantly
+    public Course createPendingCourse(String topic, String difficulty, String userId) {
+        Course course = new Course();
+        course.setTitle(topic); // Temp title
+        course.setDescription("Generating curriculum...");
+        course.setDifficulty(difficulty);
         course.setUserId(userId);
+        course.setStatus("PENDING");
         return courseRepository.save(course);
+    }
+
+    // Heavy AI generation to be called by Pub/Sub worker
+    public void generateAndSaveCourseContent(Long courseId, String topic, String difficulty, String userId) {
+        // 1. Generate heavy content
+        Course generatedCourse = aiService.generateCourse(topic, difficulty);
+        
+        // 2. Retrieve the pending skeleton
+        Course existingCourse = courseRepository.findById(courseId)
+            .orElseThrow(() -> new RuntimeException("Pending course not found"));
+            
+        // 3. Update the skeleton with the real content
+        existingCourse.setTitle(generatedCourse.getTitle());
+        existingCourse.setDescription(generatedCourse.getDescription());
+        existingCourse.setModules(generatedCourse.getModules());
+        
+        // Ensure bidirectional relationship is set
+        if (existingCourse.getModules() != null) {
+            existingCourse.getModules().forEach(module -> {
+                module.setCourse(existingCourse);
+                if (module.getLessons() != null) {
+                    module.getLessons().forEach(lesson -> lesson.setModule(module));
+                }
+            });
+        }
+        
+        existingCourse.setStatus("COMPLETED");
+        
+        // 4. Save
+        courseRepository.save(existingCourse);
+    }
+
+    // Mark a course as failed
+    public void markCourseFailed(Long courseId) {
+        courseRepository.findById(courseId).ifPresent(course -> {
+            course.setStatus("FAILED");
+            courseRepository.save(course);
+        });
     }
 
     // Get all courses for user

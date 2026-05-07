@@ -34,6 +34,9 @@ public class Course {
     @Column(name = "user_id")
     private String userId;
 
+    @Column(name = "status")
+    private String status = "PENDING";
+
     // One Course has Many Modules
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Module> modules = new ArrayList<>();

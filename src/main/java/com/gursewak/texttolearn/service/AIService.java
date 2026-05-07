@@ -93,6 +93,9 @@ public class AIService {
             - Lesson content should be educational and detailed
             - Use markdown formatting in content (headers, lists, code blocks)
             - Focus on practical, actionable information
+            - Do NOT include numbering or prefixes like "Module 1:", "Lesson 1.1:", "1.", "1.1" in module or lesson titles
+            - Return only the descriptive title text (e.g., "Docker Fundamentals" NOT "Module 1: Docker Fundamentals")
+            - The ordering is handled separately by the application
             
             Return ONLY the JSON, no additional text.
             """, topic, difficulty);

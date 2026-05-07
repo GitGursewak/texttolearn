@@ -47,7 +47,9 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(authz -> authz
-                // Require authentication for all API endpoints
+                // SSE stream endpoints must be public (EventSource can't send auth headers)
+                .requestMatchers("/api/courses/*/stream").permitAll()
+                // Require authentication for all other API endpoints
                 .requestMatchers("/api/**").authenticated()
                 .anyRequest().permitAll()
             )
