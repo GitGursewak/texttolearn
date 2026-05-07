@@ -61,14 +61,13 @@ public class SecurityConfig {
 
     @Bean
     public JwtDecoder jwtDecoder() {
-        if ("dev".equalsIgnoreCase(appEnv) && localJwk != null && !localJwk.isEmpty()) {
-            // LOCAL DEV: Load the public key from .env to prevent java.net.SocketTimeoutException 
-            // without pushing actual key strings to GitHub
+        if (localJwk != null && !localJwk.isEmpty()) {
+            // Use embedded JWK key to avoid JWKS URI timeout issues
             ECKey ecKey;
             try {
                 ecKey = ECKey.parse(localJwk);
             } catch (java.text.ParseException e) {
-                throw new IllegalStateException("Failed to parse local JWK from environment", e);
+                throw new IllegalStateException("Failed to parse JWK from environment", e);
             }
             JWKSet jwkSet = new JWKSet(ecKey);
             ImmutableJWKSet<SecurityContext> jwkSource = new ImmutableJWKSet<>(jwkSet);
@@ -80,7 +79,7 @@ public class SecurityConfig {
             
             return new NimbusJwtDecoder(jwtProcessor);
         } else {
-            // PRODUCTION: Fetch keys from Supabase JWKS URI to handle automatic key rotation
+            // Fallback: Fetch keys from Supabase JWKS URI
             return NimbusJwtDecoder.withJwkSetUri(jwksUri)
                     .jwsAlgorithm(SignatureAlgorithm.ES256)
                     .build();
